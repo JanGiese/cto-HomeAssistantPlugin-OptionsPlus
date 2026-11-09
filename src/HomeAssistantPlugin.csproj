@@ -46,6 +46,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\icons\media_player_icon.svg">
+      <LogicalName>media_player_icon.svg</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\icons\light_bulb_icon.svg">
       <LogicalName>light_bulb_icon.svg</LogicalName>
     </EmbeddedResource>

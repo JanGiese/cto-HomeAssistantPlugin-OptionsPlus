@@ -1,8 +1,10 @@
 namespace Loupedeck.HomeAssistantPlugin
 {
     using System;
+    using System.Threading;
 
     using Loupedeck;
+    using Loupedeck.HomeAssistantPlugin.Models;
     using Loupedeck.HomeAssistantPlugin.Services;
 
     /// <summary>
@@ -11,6 +13,25 @@ namespace Loupedeck.HomeAssistantPlugin
     /// </summary>
     public class HomeAssistantPlugin : Plugin
     {
+        private MediaPlayerSession? _mediaPlayers;
+
+        internal MediaPlayerSession MediaPlayers => LazyInitializer.EnsureInitialized(ref this._mediaPlayers, () => new MediaPlayerSession(
+            new HaClientAdapter(new HaWebSocketClient()),
+            () => this.TryGetSetting(SettingBaseUrl, out var url) && !String.IsNullOrWhiteSpace(url) &&
+                this.TryGetSetting(SettingToken, out var token) && !String.IsNullOrWhiteSpace(token)
+                    ? (url, token) : null));
+
+        internal MediaPlayerControlsFolder? MediaPlayerFolder { get; set; }
+        internal MediaPlayerSettings? MediaPlayerSelection { get; private set; }
+
+        internal void OpenMediaPlayer(MediaPlayerSettings settings)
+        {
+            this.MediaPlayerSelection = settings;
+            this.MediaPlayerFolder?.Configure(settings);
+            this.ExecuteGenericAction(GenericActionNames.DynamicFolder,
+                PluginDynamicFolder.DynamicFolderNamePrefix + typeof(MediaPlayerControlsFolder).FullName, 0);
+        }
+
         /// <summary>
         /// Setting key for Home Assistant base URL configuration.
         /// </summary>
@@ -130,6 +151,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
             try
             {
+                this._mediaPlayers?.Dispose();
                 PluginLog.Info("[Plugin] Closing event listener...");
                 _ = this.HaEvents.SafeCloseAsync();
 

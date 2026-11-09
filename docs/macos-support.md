@@ -127,7 +127,7 @@ Attach a completed record to the draft release:
 | Fresh install | Install downloaded `.lplug4` with normal quarantine/Gatekeeper behavior; discovery and load without an SDK or checkout |
 | Configuration | URL/token entry and persistence across reload/service restart; no unwanted application association |
 | Device controls | MX Creative Console buttons/dials; Actions Ring basic actions when hardware is available |
-| Features | Lights (brightness/temperature/hue/saturation), switches, covers/tilt, scripts, area/advanced actions, dynamic folders, external state updates |
+| Features | Lights (brightness/temperature/hue/saturation), switches, covers/tilt, scripts, area/advanced actions, media-player widgets (per-widget visibility, transport, volume/dials, source selection, shuffle/repeat, Back), dynamic folders, external state updates |
 | Rendering | SVG/PNG icons, labels, fallback glyphs, folder navigation, and rotary feedback |
 | Network/lifecycle | LAN HTTP, trusted HTTPS, bad credentials, disconnect/reconnect, sleep/wake, host restart; local-network permissions where applicable |
 | Upgrade/uninstall | Upgrade from the previous package preserves settings/bindings; no development link masks the installed package |

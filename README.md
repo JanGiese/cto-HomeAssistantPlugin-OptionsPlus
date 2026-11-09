@@ -60,6 +60,28 @@ Control your Home Assistant lights and switches from your Creative Console with 
 
 ## Actions & How to Use Them
 
+### Media Player
+
+Place **Media Player** on a Creative Console button, select a Home Assistant
+`media_player.*` entity, and choose which controls to show using the action's
+checkboxes. Settings belong to that widget, so multiple widgets can target
+different players or expose different controls for the same player.
+
+The tile displays the player name, playback state, and available track details.
+**Pressing it opens the controls on the device; it does not change playback.**
+Use Back to return to your layout.
+
+Play/pause, previous/next, volume down/up, and mute are enabled by default.
+Stop, power on/off, source selection, shuffle, and repeat are optional. Only
+enabled controls supported by the selected player are displayed. Volume dials
+use the same volume visibility settings and require absolute-volume support;
+each tick changes volume by two percentage points. Source opens a selection list.
+
+External Home Assistant changes update the widget and controls. Unavailable or
+missing players show a status message and cannot be controlled; Refresh retries
+loading. Connection settings are shared with the plugin. These device controls
+do not add media browsing, album artwork, seeking, or player grouping.
+
 ### HA: Run Script
 
 Trigger or stop any `script.*` in Home Assistant.

@@ -64,7 +64,9 @@ namespace Loupedeck.HomeAssistantPlugin
         public event Action<String, Boolean>? ScriptRunningChanged; // (entityId, isRunning)
         public event Action<String, Boolean>? SwitchStateChanged; // (entityId, isOn)
 
+        public event Action<String, JsonElement?>? MediaPlayerStateChanged;
 
+        public Boolean IsConnected => this._ws?.State == WebSocketState.Open && this._loop?.IsCompleted == false;
 
         public async Task<Boolean> ConnectAndSubscribeAsync(String baseUrl, String accessToken, CancellationToken ct)
         {
@@ -156,6 +158,27 @@ namespace Loupedeck.HomeAssistantPlugin
         }
 
 
+        internal void PublishMediaPlayerState(String entityId, JsonElement data)
+        {
+            if (!data.TryGetProperty("new_state", out var state))
+            {
+                return;
+            }
+
+            var snapshot = state.ValueKind == JsonValueKind.Object ? state.Clone() : (JsonElement?)null;
+            foreach (var subscriber in this.MediaPlayerStateChanged?.GetInvocationList() ?? Array.Empty<Delegate>())
+            {
+                try
+                {
+                    ((Action<String, JsonElement?>)subscriber)(entityId, snapshot);
+                }
+                catch (Exception ex)
+                {
+                    PluginLog.Warning(ex, "[Events] Media player state subscriber failed");
+                }
+            }
+        }
+
         // Local helper to compute Kelvin when HA only gives mireds
         private async Task ReceiveLoopAsync(CancellationToken ct)
         {
@@ -195,6 +218,12 @@ namespace Loupedeck.HomeAssistantPlugin
                     var entityId = data.TryGetProperty("entity_id", out var idProp) ? idProp.GetString() : null;
                     if (String.IsNullOrEmpty(entityId))
                     {
+                        continue;
+                    }
+
+                    if (entityId.StartsWith("media_player.", StringComparison.OrdinalIgnoreCase))
+                    {
+                        this.PublishMediaPlayerState(entityId, data);
                         continue;
                     }
 
