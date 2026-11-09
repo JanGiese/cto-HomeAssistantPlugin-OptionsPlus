@@ -3,6 +3,7 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Actions
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Reflection;
     using System.Text.Json;
 
     using Loupedeck.HomeAssistantPlugin.Models;
@@ -12,6 +13,22 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Actions
         private static StateWidgetSettings Settings(String entity = "light.wohnzimmer", String service = "light.toggle",
             String target = "light.other", String data = "", String icons = "", String fallback = "") =>
             new(entity, service, target, data, icons, fallback);
+
+        [Theory]
+        [InlineData("light.flur", "light.flur")]
+        [InlineData("sensor.room_temperature", "sensor.room_temperature")]
+        [InlineData("", "HA: State Widget")]
+        public void DisplayNameUsesConfiguredEntityIdEvenWithoutConnection(String entityId, String expected)
+        {
+            var action = new StateWidgetAction();
+            var parameters = new ActionEditorActionParameters(new Dictionary<String, String>
+            {
+                [StateWidgetAction.EntityControl] = entityId
+            });
+            var method = typeof(StateWidgetAction).GetMethod("GetCommandDisplayName", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            method.Invoke(action, new Object[] { parameters }).Should().Be(expected);
+        }
 
         [Fact]
         public void IndependentWidgetsKeepObservedEntityTargetAndTypedDataSeparate()

@@ -442,15 +442,7 @@ namespace Loupedeck.HomeAssistantPlugin
                         continue;
                     }
 
-                    var display = id;
-                    if (el.TryGetProperty("attributes", out var attrs) &&
-                        attrs.ValueKind == JsonValueKind.Object &&
-                        attrs.TryGetProperty("friendly_name", out var fn) &&
-                        fn.ValueKind == JsonValueKind.String)
-                    {
-                        display = $"{fn.GetString()} ({id})";
-                    }
-                    local[id] = display;
+                    local[id] = id;
                 }
 
                 // swap into concurrent cache

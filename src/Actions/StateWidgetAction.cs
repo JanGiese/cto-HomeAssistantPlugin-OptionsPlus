@@ -100,7 +100,7 @@ namespace Loupedeck.HomeAssistantPlugin
         protected override String GetCommandDisplayName(ActionEditorActionParameters parameters)
         {
             var settings = ReadSettings(parameters);
-            return this._session?.Get(settings.EntityId)?.FriendlyName ?? "HA: State Widget";
+            return String.IsNullOrEmpty(settings.EntityId) ? "HA: State Widget" : settings.EntityId;
         }
 
         protected override BitmapImage GetCommandImage(ActionEditorActionParameters parameters, Int32 width, Int32 height)
@@ -142,7 +142,7 @@ namespace Loupedeck.HomeAssistantPlugin
             var entities = this._session.Entities;
             foreach (var entity in entities)
             {
-                e.AddItem(entity.EntityId, entity.FriendlyName, entity.EntityId);
+                e.AddItem(entity.EntityId, entity.EntityId, entity.EntityId);
             }
             var selected = e.ActionEditorState?.GetControlValue(e.ControlName);
             if (!String.IsNullOrEmpty(selected) && !entities.Any(entity => entity.EntityId == selected))

@@ -690,11 +690,7 @@ namespace Loupedeck.HomeAssistantPlugin
                 var count = 0;
                 foreach (var cover in covers)
                 {
-                    var display = !String.IsNullOrEmpty(cover.FriendlyName)
-                        ? $"{cover.FriendlyName} ({cover.EntityId})"
-                        : cover.EntityId;
-
-                    e.AddItem(name: cover.EntityId, displayName: display, description: "Home Assistant cover");
+                    e.AddItem(name: cover.EntityId, displayName: cover.EntityId, description: "Home Assistant cover");
                     count++;
                 }
 

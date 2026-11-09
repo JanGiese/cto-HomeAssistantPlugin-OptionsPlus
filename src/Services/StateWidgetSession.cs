@@ -56,7 +56,7 @@ namespace Loupedeck.HomeAssistantPlugin.Services
             {
                 lock (this._gate)
                 {
-                    return this._entities.Values.OrderBy(e => e.FriendlyName, StringComparer.CurrentCultureIgnoreCase).ToArray();
+                    return this._entities.Values.OrderBy(e => e.EntityId, StringComparer.OrdinalIgnoreCase).ToArray();
                 }
             }
         }

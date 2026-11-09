@@ -41,6 +41,23 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
         }
 
         [Fact]
+        public async Task EntityListIsSortedByIdInsteadOfFriendlyName()
+        {
+            this._client.RequestAsync("get_states", Arg.Any<CancellationToken>()).Returns((true, """
+                [
+                    {"entity_id":"light.zimmer","state":"off","attributes":{"friendly_name":"Alpha"}},
+                    {"entity_id":"light.flur","state":"on","attributes":{"friendly_name":"Zulu"}}
+                ]
+                """, (String?)null));
+            using var session = this.Create();
+
+            (await session.RefreshAsync(CancellationToken.None)).Should().BeTrue();
+
+            session.Entities.Select(entity => entity.EntityId).Should().Equal("light.flur", "light.zimmer");
+            session.Get("light.flur")!.FriendlyName.Should().Be("Zulu");
+        }
+
+        [Fact]
         public async Task PressCallsOneFixedServiceWithSeparateTargetAndPreservedData()
         {
             using var session = this.Create();

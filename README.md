@@ -60,6 +60,9 @@ Control your Home Assistant lights and switches from your Creative Console with 
 
 ## Actions & How to Use Them
 
+Entity selectors and entity captions display full Home Assistant entity IDs
+(for example, `light.flur`) instead of friendly names. Area names are unchanged.
+
 ### HA: State Widget
 
 Place **HA: State Widget** on a Creative Console button to display a Home
