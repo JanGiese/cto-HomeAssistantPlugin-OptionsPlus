@@ -345,7 +345,8 @@ namespace Loupedeck.HomeAssistantPlugin
             {
                 if (this._ws?.State == WebSocketState.Open)
                 {
-                    await this._ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close", CancellationToken.None);
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    await this._ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close", timeout.Token);
                 }
             }
             catch

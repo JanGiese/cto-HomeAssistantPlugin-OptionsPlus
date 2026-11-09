@@ -666,7 +666,7 @@ namespace Loupedeck.HomeAssistantPlugin
             if (actionParameter.StartsWith(PfxDevice, StringComparison.OrdinalIgnoreCase))
             {
                 var entityId = actionParameter.Substring(PfxDevice.Length);
-                return this._lightsByEntity.TryGetValue(entityId, out var li) ? li.FriendlyName : entityId;
+                return entityId;
             }
             if (actionParameter.StartsWith(PfxActOn, StringComparison.OrdinalIgnoreCase))
             {

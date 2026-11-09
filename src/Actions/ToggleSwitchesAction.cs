@@ -631,11 +631,7 @@ namespace Loupedeck.HomeAssistantPlugin
                 var count = 0;
                 foreach (var switchEntity in switches)
                 {
-                    var display = !String.IsNullOrEmpty(switchEntity.FriendlyName)
-                        ? $"{switchEntity.FriendlyName} ({switchEntity.EntityId})"
-                        : switchEntity.EntityId;
-
-                    e.AddItem(name: switchEntity.EntityId, displayName: display, description: "Home Assistant switch");
+                    e.AddItem(name: switchEntity.EntityId, displayName: switchEntity.EntityId, description: "Home Assistant switch");
                     count++;
                 }
 

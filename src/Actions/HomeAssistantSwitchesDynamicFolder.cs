@@ -212,7 +212,7 @@ namespace Loupedeck.HomeAssistantPlugin
             if (actionParameter.StartsWith(PfxDevice, StringComparison.OrdinalIgnoreCase))
             {
                 var entityId = actionParameter.Substring(PfxDevice.Length);
-                return this._switchesByEntity.TryGetValue(entityId, out var si) ? si.FriendlyName : entityId;
+                return entityId;
             }
             if (actionParameter.StartsWith(PfxActOn, StringComparison.OrdinalIgnoreCase))
             {

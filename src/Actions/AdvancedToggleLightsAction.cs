@@ -1076,11 +1076,7 @@ namespace Loupedeck.HomeAssistantPlugin
                 var count = 0;
                 foreach (var light in lights)
                 {
-                    var display = !String.IsNullOrEmpty(light.FriendlyName)
-                        ? $"{light.FriendlyName} ({light.EntityId})"
-                        : light.EntityId;
-
-                    e.AddItem(name: light.EntityId, displayName: display, description: "Home Assistant light");
+                    e.AddItem(name: light.EntityId, displayName: light.EntityId, description: "Home Assistant light");
                     count++;
                 }
 

@@ -1,6 +1,7 @@
 namespace Loupedeck.HomeAssistantPlugin
 {
     using System;
+    using System.Threading;
 
     using Loupedeck;
     using Loupedeck.HomeAssistantPlugin.Services;
@@ -11,6 +12,14 @@ namespace Loupedeck.HomeAssistantPlugin
     /// </summary>
     public class HomeAssistantPlugin : Plugin
     {
+        private StateWidgetSession? _stateWidgets;
+
+        internal StateWidgetSession StateWidgets => LazyInitializer.EnsureInitialized(ref this._stateWidgets,
+            () => new StateWidgetSession(new HaClientAdapter(new HaWebSocketClient()),
+                () => this.TryGetSetting(SettingBaseUrl, out var url) && !String.IsNullOrWhiteSpace(url) &&
+                    this.TryGetSetting(SettingToken, out var token) && !String.IsNullOrWhiteSpace(token)
+                        ? (url, token) : null));
+
         /// <summary>
         /// Setting key for Home Assistant base URL configuration.
         /// </summary>
@@ -130,6 +139,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
             try
             {
+                this._stateWidgets?.Dispose();
                 PluginLog.Info("[Plugin] Closing event listener...");
                 _ = this.HaEvents.SafeCloseAsync();
 

@@ -177,7 +177,7 @@ namespace Loupedeck.HomeAssistantPlugin
 
         /// <summary>
         /// Handles listbox items requested event to populate the light selection dropdown.
-        /// Fetches available light entities from Home Assistant and displays them with friendly names.
+        /// Fetches available light entities from Home Assistant and displays their entity IDs.
         /// Provides error handling for connection issues and configuration problems.
         /// </summary>
         /// <param name="sender">Event sender.</param>
@@ -233,16 +233,7 @@ namespace Loupedeck.HomeAssistantPlugin
                         continue;
                     }
 
-                    var display = id;
-                    if (el.TryGetProperty("attributes", out var attrs) &&
-                        attrs.ValueKind == JsonValueKind.Object &&
-                        attrs.TryGetProperty("friendly_name", out var fn) &&
-                        fn.ValueKind == JsonValueKind.String)
-                    {
-                        display = $"{fn.GetString()} ({id})";
-                    }
-
-                    e.AddItem(name: id, displayName: display, description: "Home Assistant light");
+                    e.AddItem(name: id, displayName: id, description: "Home Assistant light");
                     count++;
                 }
 
