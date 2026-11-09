@@ -14,11 +14,11 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Helpers
     public class StateWidgetTransportTests
     {
         [Theory]
-        [InlineData("wss://ha.example:8123/", "wss")]
+        [InlineData("wss://ha.example:8123/", "ws")]
         [InlineData("https://ha.example:8123/", "wss")]
         [InlineData("ws://ha.example:8123/", "ws")]
         [InlineData("http://ha.example:8123/", "ws")]
-        public void BothConnectionsPreserveSecureWebSocketSettings(String url, String scheme)
+        public void BothConnectionsRetainOriginalBaseUrlMapping(String url, String scheme)
         {
             foreach (var type in new[] { typeof(HaWebSocketClient), typeof(HaEventListener) })
             {

@@ -382,7 +382,7 @@ namespace Loupedeck.HomeAssistantPlugin
             var uri = new Uri(baseUrl.TrimEnd('/'));
             var builder = new UriBuilder(uri)
             {
-                Scheme = uri.Scheme == "https" || uri.Scheme == "wss" ? "wss" : "ws",
+                Scheme = uri.Scheme == "https" ? "wss" : "ws",
                 Path = String.Join("/", uri.AbsolutePath.TrimEnd('/'), "api", "websocket")
             };
             return builder.Uri;
