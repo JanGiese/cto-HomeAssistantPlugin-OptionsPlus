@@ -44,6 +44,7 @@ namespace Loupedeck.HomeAssistantPlugin.Services
         }
 
         internal event Action? Changed;
+        internal event Action? EntityListChanged;
 
         internal Boolean IsConnected => !this._disposed && this._loaded && this._client.IsAuthenticated &&
             this._events.IsConnected && this._configuration() == this._connectedConfiguration;
@@ -121,11 +122,17 @@ namespace Loupedeck.HomeAssistantPlugin.Services
                     this._eventLifetime = null;
                     if (configuration != this._connectedConfiguration)
                     {
+                        Boolean hadEntities;
                         lock (this._gate)
                         {
+                            hadEntities = this._entities.Count > 0;
                             this._entities.Clear();
                             this._revisions.Clear();
                             this._revision = 0;
+                        }
+                        if (hadEntities)
+                        {
+                            this.NotifyEntityListChanged();
                         }
                     }
                     this._connectedConfiguration = null;
@@ -198,6 +205,7 @@ namespace Loupedeck.HomeAssistantPlugin.Services
             using var document = JsonDocument.Parse(json);
             var entities = document.RootElement.EnumerateArray().Select(StateWidgetEntity.Parse)
                 .Where(e => e != null).Select(e => e!).ToDictionary(e => e.EntityId, StringComparer.Ordinal);
+            var listChanged = false;
             lock (this._gate)
             {
                 foreach (var id in this._entities.Keys.Union(entities.Keys).ToArray())
@@ -208,13 +216,18 @@ namespace Loupedeck.HomeAssistantPlugin.Services
                     }
                     if (entities.TryGetValue(id, out var entity))
                     {
+                        listChanged |= !this._entities.ContainsKey(id);
                         this._entities[id] = entity;
                     }
                     else
                     {
-                        this._entities.Remove(id);
+                        listChanged |= this._entities.Remove(id);
                     }
                 }
+            }
+            if (listChanged)
+            {
+                this.NotifyEntityListChanged();
             }
         }
 
@@ -225,17 +238,27 @@ namespace Loupedeck.HomeAssistantPlugin.Services
                 return;
             }
             var entity = state.HasValue ? StateWidgetEntity.Parse(state.Value) : null;
+            Boolean listChanged;
             lock (this._gate)
             {
+                if (this._disposed)
+                {
+                    return;
+                }
                 this._revisions[entityId] = ++this._revision;
                 if (entity != null && entity.EntityId == entityId)
                 {
+                    listChanged = !this._entities.ContainsKey(entityId);
                     this._entities[entityId] = entity;
                 }
                 else
                 {
-                    this._entities.Remove(entityId);
+                    listChanged = this._entities.Remove(entityId);
                 }
+            }
+            if (listChanged)
+            {
+                this.NotifyEntityListChanged();
             }
             this.NotifyChanged();
         }
@@ -278,17 +301,21 @@ namespace Loupedeck.HomeAssistantPlugin.Services
             }
         }
 
-        private void NotifyChanged()
+        private void NotifyChanged() => Notify(this.Changed, "Image refresh failed");
+
+        private void NotifyEntityListChanged() => Notify(this.EntityListChanged, "Entity list refresh failed");
+
+        private static void Notify(Action? handlers, String error)
         {
-            foreach (var subscriber in this.Changed?.GetInvocationList() ?? Array.Empty<Delegate>())
+            foreach (var subscriber in handlers?.GetInvocationList() ?? Array.Empty<Delegate>())
             {
                 try
                 {
                     ((Action)subscriber)();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    PluginLog.Warning("[StateWidget] Image refresh failed");
+                    PluginLog.Warning(ex, $"[StateWidget] {error}");
                 }
             }
         }
@@ -304,6 +331,7 @@ namespace Loupedeck.HomeAssistantPlugin.Services
                 this._disposed = true;
                 this._events.EntityStateChanged -= this.OnStateChanged;
                 this.Changed = null;
+                this.EntityListChanged = null;
                 this._lifetime.Cancel();
             }
             this.CloseAsync().GetAwaiter().GetResult();

@@ -65,6 +65,7 @@ namespace Loupedeck.HomeAssistantPlugin
             }
             this._session = plugin.StateWidgets;
             this._session.Changed += this.OnStateChanged;
+            this._session.EntityListChanged += this.OnEntityListChanged;
             this._session.Start();
             return true;
         }
@@ -74,6 +75,7 @@ namespace Loupedeck.HomeAssistantPlugin
             if (this._session != null)
             {
                 this._session.Changed -= this.OnStateChanged;
+                this._session.EntityListChanged -= this.OnEntityListChanged;
                 this._session = null;
             }
             this._icons.Clear();
@@ -81,6 +83,21 @@ namespace Loupedeck.HomeAssistantPlugin
         }
 
         private void OnStateChanged() => this.ActionImageChanged();
+
+        private void OnEntityListChanged()
+        {
+            foreach (var control in new[] { EntityControl, TargetControl })
+            {
+                try
+                {
+                    this.ActionEditor.ListboxItemsChanged(control);
+                }
+                catch (Exception ex)
+                {
+                    PluginLog.Warning(ex, $"[StateWidget] Failed to refresh {control} selector");
+                }
+            }
+        }
 
         protected override Boolean RunCommand(ActionEditorActionParameters parameters)
         {
@@ -155,7 +172,7 @@ namespace Loupedeck.HomeAssistantPlugin
             }
             if (entities.Count == 0)
             {
-                this.Plugin.OnPluginStatusChanged(PluginStatus.Warning, this._session.Status + " - reopen the entity list after connecting.");
+                this.Plugin.OnPluginStatusChanged(PluginStatus.Warning, this._session.Status + " - no entities are available.");
             }
         }
     }

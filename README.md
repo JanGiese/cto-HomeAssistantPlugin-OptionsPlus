@@ -62,6 +62,8 @@ Control your Home Assistant lights and switches from your Creative Console with 
 
 Entity selectors and entity captions display full Home Assistant entity IDs
 (for example, `light.flur`) instead of friendly names. Area names are unchanged.
+Search within an entity selector using the full ID or part of it; the Options+
+action-library search finds action names, not the entities inside selectors.
 
 ### HA: State Widget
 
@@ -100,7 +102,8 @@ fallback and still allow the fixed service call. Missing or unreadable image
 files also fall back. Missing entities, `unknown`/`unavailable` states, and
 disconnection show a status and disable service calls. The plugin reloads state
 after reconnecting; initial discovery and recovery can take a short interval.
-Reopen entity lists after connecting if they were initially empty.
+The entity selectors update automatically when discovery completes and when
+entities are added or removed.
 
 Presses always use the same service, target, and data regardless of state.
 The widget follows actual Home Assistant state changes, including changes made

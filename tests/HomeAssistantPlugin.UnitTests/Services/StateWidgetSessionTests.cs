@@ -1,6 +1,7 @@
 namespace Loupedeck.HomeAssistantPlugin.Tests.Services
 {
     using System;
+    using System.Reflection;
     using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
@@ -58,6 +59,54 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
         }
 
         [Fact]
+        public async Task EntityListNotificationsTrackMembershipRatherThanState()
+        {
+            using var session = this.Create();
+            var lists = new List<String>();
+            session.EntityListChanged += () => lists.Add(String.Join(",", session.Entities.Select(entity => entity.EntityId)));
+
+            await session.RefreshAsync(CancellationToken.None);
+            await session.RefreshAsync(CancellationToken.None);
+            this.Publish("light.room", "on");
+            this.Publish("light.flur", "on");
+            this.Publish("light.flur", "off");
+            this.Publish("light.flur", null);
+            this.Publish("light.flur", null);
+            this._client.RequestAsync("get_states", Arg.Any<CancellationToken>()).Returns((true, """
+                [{"entity_id":"sensor.garage","state":"10","attributes":{"friendly_name":"Garage"}}]
+                """, (String?)null));
+            await session.RefreshAsync(CancellationToken.None);
+
+            lists.Should().Equal("light.room", "light.flur,light.room", "light.room", "sensor.garage");
+        }
+
+        [Fact]
+        public async Task EntityListNotificationsIsolateSubscribers()
+        {
+            using var session = this.Create();
+            var notifications = 0;
+            session.EntityListChanged += () => throw new InvalidOperationException("Simulated subscriber failure");
+            session.EntityListChanged += () => notifications++;
+
+            await session.RefreshAsync(CancellationToken.None);
+
+            notifications.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task InitialDiscoveryNotifiesOutsideSessionLock()
+        {
+            using var session = this.Create();
+            var gate = typeof(StateWidgetSession).GetField("_gate", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(session)!;
+            var lockHeld = new TaskCompletionSource<Boolean>(TaskCreationOptions.RunContinuationsAsynchronously);
+            session.EntityListChanged += () => lockHeld.TrySetResult(Monitor.IsEntered(gate));
+
+            session.Start();
+
+            (await lockHeld.Task.WaitAsync(TimeSpan.FromSeconds(3))).Should().BeFalse();
+        }
+
+        [Fact]
         public async Task PressCallsOneFixedServiceWithSeparateTargetAndPreservedData()
         {
             using var session = this.Create();
@@ -108,6 +157,8 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
         public async Task SnapshotCannotOverwriteAnEventReceivedDuringRequest()
         {
             using var session = this.Create();
+            var listChanges = 0;
+            session.EntityListChanged += () => listChanges++;
             this._client.RequestAsync("get_states", Arg.Any<CancellationToken>()).Returns(_ =>
             {
                 this.Publish("light.room", "on");
@@ -118,12 +169,15 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
 
             session.Get("light.room")!.State.Should().Be("on");
             session.Get("light.room")!.FriendlyName.Should().Be("Updated");
+            listChanges.Should().Be(1);
         }
 
         [Fact]
         public async Task DeletionDuringSnapshotCannotResurrectAnEntity()
         {
             using var session = this.Create();
+            var listChanges = 0;
+            session.EntityListChanged += () => listChanges++;
             this._client.RequestAsync("get_states", Arg.Any<CancellationToken>()).Returns(_ =>
             {
                 this.Publish("light.room", null);
@@ -133,6 +187,7 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
             await session.RefreshAsync(CancellationToken.None);
 
             session.Get("light.room").Should().BeNull();
+            listChanges.Should().Be(0);
         }
 
         [Fact]
@@ -159,10 +214,13 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
         {
             var session = this.Create();
             await session.RefreshAsync(CancellationToken.None);
+            var listChanges = 0;
+            session.EntityListChanged += () => listChanges++;
             this._configuration = ("ws://other", "other-token");
             this._client.RequestAsync("get_states", Arg.Any<CancellationToken>()).Returns((true, "[]", (String?)null));
             await session.RefreshAsync(CancellationToken.None);
             session.Entities.Should().BeEmpty();
+            listChanges.Should().Be(1);
 
             this._events.ClearReceivedCalls();
             this._client.ClearReceivedCalls();
@@ -172,6 +230,7 @@ namespace Loupedeck.HomeAssistantPlugin.Tests.Services
 
             session.IsConnected.Should().BeFalse();
             session.Entities.Should().BeEmpty();
+            listChanges.Should().Be(1);
             this._events.Received(1).Dispose();
             await this._client.Received(1).SafeCloseAsync();
         }
