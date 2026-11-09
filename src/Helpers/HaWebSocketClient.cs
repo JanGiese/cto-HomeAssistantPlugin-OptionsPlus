@@ -345,7 +345,8 @@ namespace Loupedeck.HomeAssistantPlugin
             {
                 if (this._ws?.State == WebSocketState.Open)
                 {
-                    await this._ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close", CancellationToken.None);
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    await this._ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Close", timeout.Token);
                 }
             }
             catch
@@ -381,7 +382,7 @@ namespace Loupedeck.HomeAssistantPlugin
             var uri = new Uri(baseUrl.TrimEnd('/'));
             var builder = new UriBuilder(uri)
             {
-                Scheme = uri.Scheme == "https" ? "wss" : "ws",
+                Scheme = uri.Scheme == "https" || uri.Scheme == "wss" ? "wss" : "ws",
                 Path = String.Join("/", uri.AbsolutePath.TrimEnd('/'), "api", "websocket")
             };
             return builder.Uri;

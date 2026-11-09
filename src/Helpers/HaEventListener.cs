@@ -7,7 +7,7 @@ namespace Loupedeck.HomeAssistantPlugin
     using System.Threading;
     using System.Threading.Tasks;
 
-    public sealed class HaEventListener : IDisposable
+    public sealed class HaEventListener : IDisposable, Services.IStateWidgetEvents
     {
         // ====================================================================
         // CONSTANTS - Home Assistant Event Listener Configuration
@@ -64,6 +64,30 @@ namespace Loupedeck.HomeAssistantPlugin
         public event Action<String, Boolean>? ScriptRunningChanged; // (entityId, isRunning)
         public event Action<String, Boolean>? SwitchStateChanged; // (entityId, isOn)
 
+        public event Action<String, JsonElement?>? EntityStateChanged;
+
+        public Boolean IsConnected => this._ws?.State == WebSocketState.Open && this._loop?.IsCompleted == false;
+
+        internal void PublishEntityState(String entityId, JsonElement data)
+        {
+            var subscribers = this.EntityStateChanged?.GetInvocationList();
+            if (subscribers == null || !data.TryGetProperty("new_state", out var state))
+            {
+                return;
+            }
+            var snapshot = state.ValueKind == JsonValueKind.Object ? state.Clone() : (JsonElement?)null;
+            foreach (var subscriber in subscribers)
+            {
+                try
+                {
+                    ((Action<String, JsonElement?>)subscriber)(entityId, snapshot);
+                }
+                catch (Exception ex)
+                {
+                    PluginLog.Warning(ex, "[Events] Entity state subscriber failed");
+                }
+            }
+        }
 
 
         public async Task<Boolean> ConnectAndSubscribeAsync(String baseUrl, String accessToken, CancellationToken ct)
@@ -197,6 +221,8 @@ namespace Loupedeck.HomeAssistantPlugin
                     {
                         continue;
                     }
+
+                    this.PublishEntityState(entityId, data);
 
                     if (entityId.StartsWith("light.", StringComparison.OrdinalIgnoreCase))
                     {
@@ -433,7 +459,8 @@ namespace Loupedeck.HomeAssistantPlugin
                 {
                     PluginLog.Verbose("[Events] Closing WebSocket connection...");
                     var closeStart = DateTime.UtcNow;
-                    await this._ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Bye", CancellationToken.None);
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    await this._ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Bye", timeout.Token);
                     var closeTime = DateTime.UtcNow - closeStart;
                     PluginLog.Debug(() => $"[Events] WebSocket closed in {closeTime.TotalMilliseconds:F0}ms");
                 }
@@ -506,7 +533,7 @@ namespace Loupedeck.HomeAssistantPlugin
             var uri = new Uri(baseUrl.TrimEnd('/'));
             var builder = new UriBuilder(uri)
             {
-                Scheme = (uri.Scheme == "https") ? "wss" : "ws",
+                Scheme = uri.Scheme == "https" || uri.Scheme == "wss" ? "wss" : "ws",
                 Path = String.Join("/", uri.AbsolutePath.TrimEnd('/'), "api", "websocket")
             };
             return builder.Uri;

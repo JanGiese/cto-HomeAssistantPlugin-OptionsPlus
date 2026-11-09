@@ -60,6 +60,50 @@ Control your Home Assistant lights and switches from your Creative Console with 
 
 ## Actions & How to Use Them
 
+### HA: State Widget
+
+Place **HA: State Widget** on a Creative Console button to display a Home
+Assistant entity's live state and call one fixed service when pressed.
+Each widget has independent settings:
+
+1. Select the **State entity**, for example `light.wohnzimmer`.
+2. Enter **Service** as `domain.service`, for example `light.toggle`.
+3. Select an explicit **Target entity**. It may differ from the displayed entity,
+   including its domain.
+4. Optionally enter **Service data (JSON object)**, for example
+   `{"transition":1}`. Leave blank for no data. Use the target selector, not
+   `entity_id` in this JSON, to specify the target.
+
+Lights and switches automatically use the plugin's on/off icons. For other
+states or custom images, optionally configure **State icons (JSON object)**:
+
+```json
+{"on":"builtin:light_on","off":"builtin:light_off"}
+```
+
+State keys match Home Assistant's raw state strings exactly. Available bundled
+references are `builtin:light_on`, `builtin:light_off`, `builtin:light`,
+`builtin:switch_on`, `builtin:switch_off`, `builtin:switch`, `builtin:issue`,
+`builtin:script`, and `builtin:cover`.
+
+For custom icons, use an absolute PNG/SVG path as the mapping value, such as
+`{"playing":"/Users/example/Icons/playing.svg"}` on macOS or
+`{"playing":"C:\\Icons\\playing.png"}` on Windows. The file must remain
+accessible on the computer running the plugin; it is not imported or synced.
+**Fallback icon** accepts the same references and defaults to `builtin:issue`.
+
+Explicit mappings override automatic icons. Unmapped valid states use the
+fallback and still allow the fixed service call. Missing or unreadable image
+files also fall back. Missing entities, `unknown`/`unavailable` states, and
+disconnection show a status and disable service calls. The plugin reloads state
+after reconnecting; initial discovery and recovery can take a short interval.
+Reopen entity lists after connecting if they were initially empty.
+
+Presses always use the same service, target, and data regardless of state.
+The widget follows actual Home Assistant state changes, including changes made
+elsewhere; it does not optimistically flip state or automatically retry failed
+service calls. Existing plugin connection settings are shared.
+
 ### HA: Run Script
 
 Trigger or stop any `script.*` in Home Assistant.
